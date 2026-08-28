@@ -78,3 +78,27 @@ WHERE o.order_status = 'delivered'
   AND o.order_estimated_delivery_date IS NOT NULL
 GROUP BY c.customer_state
 ORDER BY late_delivery_rate_pct DESC;
+
+--4. Delivery delay vs review score
+SELECT
+    r.review_score,
+    COUNT(*) AS review_count,
+    ROUND(
+        AVG(
+            EXTRACT(
+                EPOCH FROM (
+                    o.order_delivered_customer_date
+                    - o.order_estimated_delivery_date
+                )
+            ) / 86400
+        ),
+        2
+    ) AS avg_delay_days
+FROM orders AS o
+JOIN order_reviews AS r
+    ON o.order_id = r.order_id
+WHERE o.order_status = 'delivered'
+  AND o.order_delivered_customer_date IS NOT NULL
+  AND o.order_estimated_delivery_date IS NOT NULL
+GROUP BY r.review_score
+ORDER BY r.review_score;
